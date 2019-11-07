@@ -116,14 +116,13 @@ def findPath(nodeList, edgeCount, start):
             if not curEdges[ind].visited:
                 curNodekey = curEdges[ind].Node
                 curEdges[ind].visited = True
-
-                # in eulerian paths, this is to check if we are at the end node
-                # if curNodekey not in nodeList.keys():
-                #     end = curNodekey
-                #     curPath.append(curNodekey)
-                #     break
-
-                curEdges = nodeList[curNodekey]
+                while True:
+                    try:
+                        curEdges = nodeList[curNodekey]
+                        break
+                    except KeyError:
+                        ...
+                        pass
                 curPath.append(curNodekey)
                 found = True
                 break
@@ -188,23 +187,25 @@ def stringFromPath(pathList):
 
     return dna
 
+
 if __name__ == '__main__':
     # with open("dnastring.txt") as dnaFile:
         # kmers = dnaFile.read().rstrip()
         # kmers = kmers.split("\n")
         # kmers = kmers[1:]
 
-    fasta_sequences = SeqIO.parse(open('synthetic.example.noerror.small.fasta'), 'fasta')
+    k = 6
+
+    fasta_sequences = SeqIO.parse(open('real.error.small.fasta'), 'fasta')
+
+    dnas = []
+    for record in fasta_sequences:
+        dnas += [str(record.seq)]
 
     kmers = []
-    for record in fasta_sequences:
-        kmers += [str(record.seq)]
-
-    # kmers = {}
-    # for dna in dnas:
-    #     for i in range(len(dna) - k):
-    #         new_node = Node(dna[i:i + k])
-    #         kmers
+    for dna in dnas:
+        for i in range(len(dna) - k):
+            kmers += [dna[i:i + k]]
 
     adj = adjacencyListBrujn(kmers)
 

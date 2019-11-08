@@ -1,6 +1,7 @@
 import copy
 import random
 import re
+import string
 from Bio import SeqIO
 
 
@@ -27,6 +28,31 @@ class Edge:
         dna = re.sub('G', 'C', dna)
         dna = re.sub('B', 'G', dna)
         return dna[::-1]
+
+
+def HammingDistance(string1, string2):
+    hammingCount = 0
+    for c1, c2 in zip(string1, string2):
+        if c1 != c2:
+            hammingCount +=1
+    return hammingCount
+
+def Neighbors(pattern, d):
+    if d == 0:
+        return pattern
+    if len(pattern) == 1:
+        return {"A", "C", "G", "T"}
+    neighborhood = set()
+    suffixneighbors = Neighbors(pattern[1:], d)
+    for st in suffixneighbors:
+        if HammingDistance(pattern[1:], st) < d:
+            neighborhood.add("A{0}".format(st))
+            neighborhood.add("C{0}".format(st))
+            neighborhood.add("G{0}".format(st))
+            neighborhood.add("T{0}".format(st))
+        else:
+            neighborhood.add(pattern[0]+st)
+    return neighborhood
 
 
 def Suffix(pattern):
@@ -121,7 +147,7 @@ def findPath(nodeList, edgeCount, start):
                         curEdges = nodeList[curNodekey]
                         break
                     except KeyError:
-                        ...
+
                         pass
                 curPath.append(curNodekey)
                 found = True

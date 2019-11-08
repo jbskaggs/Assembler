@@ -30,12 +30,94 @@ class Edge:
         return dna[::-1]
 
 
+def hamming_distance(dna0, dna1):
+    count = 0
+    for i in range(len(dna0)):
+        if dna0[i] != dna1[i]:
+            count += 1
+    return count
+
+
+def generate_the_d_neighborhood(dna, d):
+    if d == 0:
+        return {dna}
+    if len(dna) == 1:
+        return ['A', 'C', 'G', 'T']
+    neighborhood = []
+    suffix_neighbors = generate_the_d_neighborhood(dna[1:], d)
+    for text in suffix_neighbors:
+        if hamming_distance(dna[1:], text) < d:
+            for nucleotide in ['A', 'C', 'G', 'T']:
+                neighborhood += [nucleotide + text]
+        else:
+            neighborhood += [dna[0] + text]
+    return neighborhood
+
+
+def dfs(nodes, node, lastNode, path):
+    for i in range(len(node.ys)):
+        if node.visited[i] == 0:
+            node.visited[i] = 1
+            dfs_result = dfs(nodes, nodes[node.ys[i]], lastNode, path + [node.ys[i]])
+            if dfs_result[0] == lastNode:  # and len(dfs_result[1]) == num_vals * 3 + 1:
+                return dfs_result
+            node.visited[i] = 0
+    return node.x, path
+
+
+def find_an_eulerian_cycle(nodes):
+    # start_node = int(random() * len(nodes))
+    start_node = 0
+    _, cycle = dfs(nodes, nodes[start_node], start_node, [start_node])
+    i = 0
+    while i < len(cycle):
+        p = cycle[i]
+        if len(nodes[p].ys) > 1:
+            for j in range(len(nodes[p].ys)):
+                k = nodes[p].ys[j]
+                if nodes[p].visited[j] == 0:
+                    _, c = dfs(nodes, nodes[p], nodes[p].x, [nodes[p]])
+                    cycle = cycle[:i+1] + c[1:] + cycle[i+1:]
+                    break
+        i += 1
+    return cycle
+
+
+def find_an_eulerian_path(nodes):
+    start_node = 0
+    last_node = 0
+    for node in nodes:
+        if len(node.ys) > len(node.inv_ys):
+            start_node = node.x
+            break
+    for node in nodes:
+        if len(node.ys) < len(node.inv_ys):
+            last_node = node.x
+            break
+
+    _, e_path = dfs(nodes, nodes[start_node], last_node, [start_node])
+    i = 0
+    while i < len(e_path):
+        p = e_path[i]
+        if len(nodes[p].ys) > 1:
+            for j in range(len(nodes[p].ys)):
+                k = nodes[p].ys[j]
+                if nodes[p].visited[j] == 0:
+                    _, c = dfs(nodes, nodes[p], nodes[p].x, [nodes[p]])
+                    e_path = e_path[:i+1] + c[1:] + e_path[i+1:]
+                    break
+        i += 1
+    return e_path
+
+
+
 def HammingDistance(string1, string2):
     hammingCount = 0
     for c1, c2 in zip(string1, string2):
         if c1 != c2:
             hammingCount +=1
     return hammingCount
+
 
 def Neighbors(pattern, d):
     if d == 0:
@@ -152,7 +234,7 @@ def findPath(nodeList, edgeCount, start):
                     neighbors = Neighbors(curNodekey, 1)
                     for neigh in neighbors:
                         if neigh in nodeList.keys():
-                            curEdges = nodeList[curNodekey]
+                            curEdges = nodeList[neigh]
                             found = True
                             break
                     found = False
@@ -228,7 +310,7 @@ if __name__ == '__main__':
         # kmers = kmers.split("\n")
         # kmers = kmers[1:]
 
-    k = 6
+    k = 21
 
     fasta_sequences = SeqIO.parse(open('real.error.small.fasta'), 'fasta')
 
@@ -244,6 +326,19 @@ if __name__ == '__main__':
     adj = adjacencyListBrujn(kmers)
 
     nodelist, edgeCount, start, end = buildGraphWithFalseEdge(adj)
+
+    for node in nodelist.keys():
+        for i in range(len(nodelist[node])):
+            if nodelist[node][i].Node not in nodelist.keys():
+                for j in range(1, k):
+                    for neighbor in generate_the_d_neighborhood(nodelist[node][i].Node, 1):
+                        if neighbor in nodelist.keys():
+                            nodelist[node][i].Node = neighbor
+                            break
+                    if nodelist[node][i].Node in nodelist.keys():
+                        break
+
+
     answer = findPath(nodelist, edgeCount, start)
     answer = formatPath(answer, end)
     answer = stringFromPath(answer)

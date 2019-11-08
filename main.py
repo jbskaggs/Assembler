@@ -3,13 +3,14 @@ import random
 import re
 import string
 from Bio import SeqIO
+from stats import assembly_stats
 
 
 class Edge:
 
     def __init__(self, NodePoint):
         self.Node = NodePoint
-        self.Node_r = self.reverse_complement(NodePoint)
+        # self.Node_r = self.reverse_complement(NodePoint)
         self.visited = False
         self.count = 1
 
@@ -19,15 +20,15 @@ class Edge:
     def add_one(self):
         self.count += 1
 
-    @staticmethod
-    def reverse_complement(dna):
-        dna = re.sub('A', 'B', dna)
-        dna = re.sub('T', 'A', dna)
-        dna = re.sub('B', 'T', dna)
-        dna = re.sub('C', 'B', dna)
-        dna = re.sub('G', 'C', dna)
-        dna = re.sub('B', 'G', dna)
-        return dna[::-1]
+
+def reverse_complement(dna):
+    dna = re.sub('A', 'B', dna)
+    dna = re.sub('T', 'A', dna)
+    dna = re.sub('B', 'T', dna)
+    dna = re.sub('C', 'B', dna)
+    dna = re.sub('G', 'C', dna)
+    dna = re.sub('B', 'G', dna)
+    return dna[::-1]
 
 
 def hamming_distance(dna0, dna1):
@@ -108,7 +109,6 @@ def find_an_eulerian_path(nodes):
                     break
         i += 1
     return e_path
-
 
 
 def HammingDistance(string1, string2):
@@ -229,16 +229,6 @@ def findPath(nodeList, edgeCount, start):
                 if curNodekey in nodeList.keys():
                     curEdges = nodeList[curNodekey]
                     found = True
-                else:
-                    #account for error. We decided to do this by generating the D neighborhood of the key
-                    neighbors = Neighbors(curNodekey, 1)
-                    for neigh in neighbors:
-                        if neigh in nodeList.keys():
-                            curEdges = nodeList[neigh]
-                            found = True
-                            break
-                    found = False
-
                 if found:
                     curPath.append(curNodekey)
                     break
@@ -246,6 +236,7 @@ def findPath(nodeList, edgeCount, start):
             # we need to "reset" the ant but keep the progress we have made
             # first find node with unexplored edges from along the path
             # iterate through node keys and find node with untouched path
+            return curPath
             found = False
             for ind in range(len(curPath)):
                 curNodekey = curPath[ind]
@@ -310,13 +301,14 @@ if __name__ == '__main__':
         # kmers = kmers.split("\n")
         # kmers = kmers[1:]
 
-    k = 21
+    k = 9
 
-    fasta_sequences = SeqIO.parse(open('real.error.small.fasta'), 'fasta')
+    fasta_sequences = SeqIO.parse(open('real.error.large.fasta'), 'fasta')
 
     dnas = []
     for record in fasta_sequences:
         dnas += [str(record.seq)]
+        # dnas += [reverse_complement(str(record.seq))]
 
     kmers = []
     for dna in dnas:
@@ -339,7 +331,25 @@ if __name__ == '__main__':
                         break
 
 
-    answer = findPath(nodelist, edgeCount, start)
-    answer = formatPath(answer, end)
-    answer = stringFromPath(answer)
-    print(answer)
+    # answer = findPath(nodelist, edgeCount, start)
+    contigs = []
+    aver_contig_size, long_contig_size = 0, 0
+    i = 0
+    for node in nodelist:
+        if not nodelist[node][0].visited:
+            contig = findPath(nodelist, edgeCount, nodelist[node][0].Node)
+            contigs += [contig]
+    for answer in contigs:
+        answer = formatPath(answer, end)
+        answer = stringFromPath(answer)
+        aver_contig_size += len(answer)
+        if long_contig_size < len(answer):
+            long_contig_size = len(answer)
+        i += 1
+        print(answer)
+
+    print('Average Contig Size: ', aver_contig_size / i)
+    print('Longest Contig Size: ', long_contig_size)
+    print('Number of Contigs  : ', i)
+
+    # assembly_stats()

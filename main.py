@@ -142,16 +142,24 @@ def findPath(nodeList, edgeCount, start):
             if not curEdges[ind].visited:
                 curNodekey = curEdges[ind].Node
                 curEdges[ind].visited = True
-                while True:
-                    try:
-                        curEdges = nodeList[curNodekey]
-                        break
-                    except KeyError:
 
-                        pass
-                curPath.append(curNodekey)
-                found = True
-                break
+                # in real sequencing graphs, we need to account for error
+                if curNodekey in nodeList.keys():
+                    curEdges = nodeList[curNodekey]
+                    found = True
+                else:
+                    #account for error. We decided to do this by generating the D neighborhood of the key
+                    neighbors = Neighbors(curNodekey, 1)
+                    for neigh in neighbors:
+                        if neigh in nodeList.keys():
+                            curEdges = nodeList[curNodekey]
+                            found = True
+                            break
+                    found = False
+
+                if found:
+                    curPath.append(curNodekey)
+                    break
         if not found:  # we are stuck
             # we need to "reset" the ant but keep the progress we have made
             # first find node with unexplored edges from along the path
